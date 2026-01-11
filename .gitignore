@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.env
+.env.*
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# Test, log, and cache files
+*.log
+*.sqlite3
+*.db
+*.egg-info/
+.pytest_cache/
+cache/
+data/
+*.parquet
+*.feather
+*.csv
+
+# Distribution / packaging
+build/
+dist/
+*.egg
+*.whl
+*.manifest
+*.spec
+
+# Other
+node_modules/
+tmp/
