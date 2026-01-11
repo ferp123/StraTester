@@ -4,8 +4,8 @@
 
 - [ ] Set up Python 3.11.14 environment
 - [ ] Install dependencies (vectorbt, Dash, yfinance, alpaca-py, polygon-api-client, pandas, numpy, plotly, python-dotenv, pytz)
-- [ ] Configure .env for API keys
-- [ ] Git
+- [x] Configure .env for API keys
+- [x] Git
 
 ## 2. Data Layer
 
@@ -35,7 +35,23 @@
 - [ ] Integrate paper trading with Alpaca/Massive
 - [ ] Enable live execution of successful strategies
 
-## 7. Documentation & Extensibility
+## 7. Error Handling & Logging
 
-- [ ] Document architecture and usage
+- [ ] Implement centralized error handling
+- [ ] Set up logging with Python's logging module
+
+## 8. Unit Testing
+
+- [ ] Set up pytest and write unit tests
+- [ ] Add integration tests for data and strategy layers
+
+## 9. CI/CD
+
+- [ ] Configure GitHub Actions for automated testing
+- [ ] Add deployment workflow (optional)
+
+## 10. Documentation & Extensibility
+
+- [ ] Create docs/ directory and initial documentation
+- [ ] Add docstrings and usage examples
 - [ ] Plan for future asset class support

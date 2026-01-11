@@ -1,5 +1,4 @@
-# Python version
-python_version == 3.11.14
+
 
 # Core libraries
 vectorbt>=0.25.0
