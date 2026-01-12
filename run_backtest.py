@@ -12,6 +12,7 @@ from src.backtester import Backtester
 STRATEGY_MAP = {
     'sma_crossover': 'src.strategies.sma_crossover.SmaCrossoverStrategy',
     'rsi_mean_reversion': 'src.strategies.rsi_mean_reversion.RsiMeanReversionStrategy',
+    'macd_crossover': 'src.strategies.macd_crossover.MACDCrossoverStrategy',
 }
 
 def get_strategy_class(strategy_name):
@@ -30,12 +31,19 @@ def main():
     parser.add_argument('--slow', type=int, default=15, help='Slow period (for SMA Crossover)')
     parser.add_argument('--cash', type=float, default=100_000, help='Initial cash')
     parser.add_argument('--fee', type=float, default=0.0, help='Per-trade fee')
+    parser.add_argument('--timeframe', type=str, default='1d', help='Timeframe (e.g. 1d, 1min, 5min, 1h)')
+    parser.add_argument('--date_range', type=str, default=None, help='Date range string (e.g. 2021-01-01_to_2026-01-12)')
     args = parser.parse_args()
 
     fetcher = DataFetcher()
-    data = fetcher.cache.load(args.symbol, args.provider, 'parquet')
+    # Timeframe mapping for cache folder
+    tf_map = {'1d': 'day', '1min': 'minute', '1m': 'minute', '5min': 'minute', '1h': 'hour'}
+    cache_timeframe = args.timeframe or '1d'
+    if args.provider == 'massive':
+        cache_timeframe = tf_map.get(args.timeframe, 'day')
+    data = fetcher.cache.load(args.symbol, args.provider, cache_timeframe, 'parquet', args.date_range)
     if data is None:
-        print(f"No cached data found for {args.symbol}/{args.provider}. Please run the fetcher first.")
+        print(f"No cached data found for {args.symbol}/{args.provider}/{cache_timeframe}{f'/{args.date_range}' if args.date_range else ''}. Please run the fetcher first.")
         return
 
     StrategyClass = get_strategy_class(args.strategy)

@@ -1,3 +1,4 @@
+
 """
 Dash/Plotly dashboard for visualizing backtest results and strategy performance.
 Run with: python src/dashboard.py
@@ -33,6 +34,37 @@ app = dash.Dash(
     assets_folder=assets_path
 )
 
+# Add this after app = dash.Dash(...) and before app.layout = ...
+from dash.dependencies import Input, Output
+
+# Populate cache-file-dropdown options based on symbol, provider, and timeframe
+@app.callback(
+    Output('cache-file-dropdown', 'options'),
+    [Input('symbol', 'value'), Input('provider', 'value'), Input('timeframe', 'value')]
+)
+def update_cache_file_options(symbol, provider, timeframe):
+    import os
+    # If any required value is None, return empty options
+    if not symbol or not provider or not timeframe:
+        return []
+    # Map timeframe for cache folder
+    tf_map = {'1d': 'day', '1min': 'minute', '1m': 'minute', '5min': 'minute', '1h': 'hour'}
+    def get_cache_timeframe(provider, timeframe):
+        if provider == 'massive':
+            return tf_map.get(timeframe, timeframe)
+        return timeframe
+    chosen_provider = provider
+    if provider == 'auto':
+        chosen_provider = 'massive'  # fallback for dropdown population
+    cache_timeframe = get_cache_timeframe(chosen_provider, timeframe)
+    # Ensure all path components are strings
+    cache_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'cache', str(chosen_provider), str(symbol), str(cache_timeframe)))
+    options = []
+    if os.path.isdir(cache_dir):
+        files = [f for f in os.listdir(cache_dir) if f.endswith('.parquet')]
+        options = [{'label': f, 'value': f} for f in sorted(files)]
+    return options
+
 # Simple layout: symbol/provider/strategy selection, metrics, and charts
 app.layout = dbc.Container([
     dbc.Row([
@@ -41,62 +73,121 @@ app.layout = dbc.Container([
     dbc.Row([
         dbc.Col([
             dbc.Card([
+                dbc.CardHeader(html.H5("Data Selection")),
                 dbc.CardBody([
                     dbc.Row([
                         dbc.Col([
-                            html.Label("Symbol", className="form-label fw-bold"),
-                            dcc.Input(id='symbol', value='GOOGL', type='text', className="form-control mb-2")
+                            html.Label(["Symbol ", html.I(className="bi bi-info-circle", id="tt-symbol")], className="form-label fw-bold"),
+                            dcc.Dropdown(
+                                id='symbol',
+                                options=[
+                                    {'label': s, 'value': s} for s in sorted(list(set([
+                                        'AAPL', 'AMZN', 'BA', 'BAC', 'GOOGL', 'JNJ', 'JPM', 'MSFT', 'SPY', 'TSLA', 'UNH', 'UNP'
+                                    ])))
+                                ],
+                                value='SPY',
+                                className="mb-2"
+                            )
                         ], md=2),
                         dbc.Col([
-                            html.Label("Provider", className="form-label fw-bold"),
+                            html.Label(["Provider ", html.I(className="bi bi-info-circle", id="tt-provider")], className="form-label fw-bold"),
                             dcc.Dropdown(id='provider', options=[
+                                {'label': 'Auto', 'value': 'auto'},
                                 {'label': 'Massive', 'value': 'massive'},
                                 {'label': 'yFinance', 'value': 'yfinance'}
-                            ], value='massive', className="mb-2")
+                            ], value='auto', className="mb-2")
                         ], md=2),
                         dbc.Col([
-                            html.Label("Strategy", className="form-label fw-bold"),
+                            html.Label(["Timeframe ", html.I(className="bi bi-info-circle", id="tt-timeframe")], className="form-label fw-bold"),
+                            dcc.Dropdown(id='timeframe', options=[
+                                {'label': 'Daily', 'value': '1d'},
+                                {'label': '1 Minute', 'value': '1min'},
+                                {'label': '5 Minute', 'value': '5min'},
+                                {'label': '1 Hour', 'value': '1h'}
+                            ], value='1d', className="mb-2")
+                        ], md=2),
+                        dbc.Col([
+                            html.Label(["Start Date ", html.I(className="bi bi-info-circle", id="tt-start-date")], className="form-label fw-bold"),
+                            dcc.DatePickerSingle(id='start-date', date=None, className="mb-2")
+                        ], md=2),
+                        dbc.Col([
+                            html.Label(["End Date ", html.I(className="bi bi-info-circle", id="tt-end-date")], className="form-label fw-bold"),
+                            dcc.DatePickerSingle(id='end-date', date=None, className="mb-2")
+                        ], md=2),
+                    ]),
+                    dbc.Row([
+                        dbc.Col([
+                            html.Label(["Cached Data Set ", html.I(className="bi bi-info-circle", id="tt-cache-file")], className="form-label fw-bold"),
+                            dcc.Dropdown(id='cache-file-dropdown', options=[], value=None, clearable=True, className="mb-2")
+                        ], md=4)
+                    ])
+                ])
+            ], className="mb-3 shadow-sm"),
+            dbc.Card([
+                dbc.CardHeader(html.H5("Strategy Parameters")),
+                dbc.CardBody([
+                    dbc.Row([
+                        dbc.Col([
+                            html.Label(["Strategy ", html.I(className="bi bi-info-circle", id="tt-strategy")], className="form-label fw-bold"),
                             dcc.Dropdown(id='strategy', options=[
                                 {'label': 'SMA Crossover', 'value': 'sma_crossover'},
                                 {'label': 'RSI Mean Reversion', 'value': 'rsi_mean_reversion'},
                                 {'label': 'MACD Crossover', 'value': 'macd_crossover'}
                             ], value='sma_crossover', className="mb-2")
-                        ], md=2),
+                        ], md=3),
                         dbc.Col([
-                            html.Label("Fast (SMA/RSI)", className="form-label fw-bold"),
+                            html.Label(["Fast (SMA/RSI) ", html.I(className="bi bi-info-circle", id="tt-fast")], className="form-label fw-bold"),
                             dcc.Input(id='fast', value=10, type='number', min=1, step=1, className="form-control mb-2")
-                        ], md=2),
+                        ], md=3),
                         dbc.Col([
-                            html.Label("Slow (SMA)", className="form-label fw-bold"),
+                            html.Label(["Slow (SMA) ", html.I(className="bi bi-info-circle", id="tt-slow")], className="form-label fw-bold"),
                             dcc.Input(id='slow', value=50, type='number', min=1, step=1, className="form-control mb-2")
-                        ], md=2),
-                    ]),
+                        ], md=3),
+                    ])
+                ])
+            ], className="mb-3 shadow-sm"),
+            dbc.Card([
+                dbc.CardHeader(html.H5("Backtest Settings")),
+                dbc.CardBody([
                     dbc.Row([
                         dbc.Col([
-                            html.Label("Starting Capital", className="form-label fw-bold"),
+                            html.Label(["Starting Capital ", html.I(className="bi bi-info-circle", id="tt-starting-capital")], className="form-label fw-bold"),
                             dcc.Input(id='starting-capital', value=100000, type='number', min=1000, step=1000, className="form-control mb-2")
-                        ], md=2),
+                        ], md=3),
                         dbc.Col([
-                            html.Label("Risk Factor", className="form-label fw-bold"),
+                            html.Label(["Risk Factor ", html.I(className="bi bi-info-circle", id="tt-risk-factor")], className="form-label fw-bold"),
                             dcc.Input(id='risk-factor', value=1.0, type='number', min=0.01, max=10, step=0.01, className="form-control mb-2")
-                        ], md=2),
+                        ], md=3),
                         dbc.Col([
-                            html.Label("Slippage (%)", className="form-label fw-bold"),
+                            html.Label(["Slippage (%) ", html.I(className="bi bi-info-circle", id="tt-slippage")], className="form-label fw-bold"),
                             dcc.Input(id='slippage', value=0.0, type='number', min=0, max=10, step=0.01, className="form-control mb-2")
-                        ], md=2),
+                        ], md=3),
                         dbc.Col([
-                            html.Label("Commission ($)", className="form-label fw-bold"),
+                            html.Label(["Commission ($) ", html.I(className="bi bi-info-circle", id="tt-commission")], className="form-label fw-bold"),
                             dcc.Input(id='commission', value=0.0, type='number', min=0, max=100, step=0.01, className="form-control mb-2")
-                        ], md=2),
+                        ], md=3),
                         dbc.Col([
                             dbc.Button('Run Backtest', id='run-btn', color='primary', className="me-2 mt-4"),
                             dbc.Button('Download Trades CSV', id='download-btn', color='secondary', className="mt-4")
-                        ], md=2)
+                        ], md=3)
                     ])
                 ])
             ], className="mb-4 shadow-sm")
         ], width=12)
     ]),
+        # Tooltips for each parameter
+        dbc.Tooltip("Stock ticker symbol (e.g., AAPL, MSFT, SPY)", target="tt-symbol", placement="top"),
+        dbc.Tooltip("Data provider: Massive (Polygon) or yFinance", target="tt-provider", placement="top"),
+        dbc.Tooltip("Data timeframe: daily, 1min, 5min, or 1h", target="tt-timeframe", placement="top"),
+        dbc.Tooltip("Start date for data selection", target="tt-start-date", placement="top"),
+        dbc.Tooltip("End date for data selection", target="tt-end-date", placement="top"),
+        dbc.Tooltip("Strategy to use for backtesting", target="tt-strategy", placement="top"),
+        dbc.Tooltip("Fast parameter for SMA/RSI/MACD (short window)", target="tt-fast", placement="top"),
+        dbc.Tooltip("Slow parameter for SMA/MACD (long window)", target="tt-slow", placement="top"),
+        dbc.Tooltip("Initial capital for backtest", target="tt-starting-capital", placement="top"),
+        dbc.Tooltip("Risk factor for position sizing (future use)", target="tt-risk-factor", placement="top"),
+        dbc.Tooltip("Slippage percentage per trade (future use)", target="tt-slippage", placement="top"),
+        dbc.Tooltip("Commission per trade in dollars", target="tt-commission", placement="top"),
     dbc.Row([
         dbc.Col([
             dbc.Card([
@@ -200,16 +291,68 @@ global_cache = {}
     [
         State('symbol', 'value'), State('provider', 'value'), State('strategy', 'value'),
         State('fast', 'value'), State('slow', 'value'),
-        State('starting-capital', 'value'), State('risk-factor', 'value'), State('slippage', 'value'), State('commission', 'value')
+        State('starting-capital', 'value'), State('risk-factor', 'value'), State('slippage', 'value'), State('commission', 'value'),
+        State('cache-file-dropdown', 'value')
     ]
 )
-def update_dashboard(n_clicks, chart_toggles, selected_trade, symbol, provider, strategy, fast, slow, starting_capital, risk_factor, slippage, commission):
+def update_dashboard(n_clicks, chart_toggles, selected_trade, symbol, provider, strategy, fast, slow, starting_capital, risk_factor, slippage, commission, selected_cache_file):
     if n_clicks == 0:
         return '', go.Figure(), go.Figure(), '', [], None, go.Figure()
     fetcher = DataFetcher()
-    data = fetcher.cache.load(symbol, provider, 'parquet')
+    # Get timeframe and date range from UI
+    ctx_inputs = dash.callback_context.inputs
+    timeframe = ctx_inputs.get('timeframe.value', '1d') if hasattr(ctx_inputs, 'get') else '1d'
+    start_date = ctx_inputs.get('start-date.date', None)
+    end_date = ctx_inputs.get('end-date.date', None)
+    date_range = f"{start_date}_to_{end_date}" if start_date and end_date else None
+
+    # Timeframe mapping for cache folder
+    tf_map = {'1d': 'day', '1min': 'minute', '1m': 'minute', '5min': 'minute', '1h': 'hour'}
+
+    # Auto-pick provider logic
+    chosen_provider = provider
+    warning = ''
+    # Always map timeframe for massive, even if date_range is None
+    def get_cache_timeframe(provider, timeframe):
+        if provider == 'massive':
+            return tf_map.get(timeframe, timeframe)
+        return timeframe
+
+    cache_timeframe = get_cache_timeframe(provider, timeframe)
+    if provider == 'auto':
+        # If 1m timeframe and <=7 days, prefer yfinance, else massive
+        if timeframe in ['1m', '1min', 'minute']:
+            if start_date and end_date:
+                from datetime import datetime
+                d0 = datetime.strptime(start_date, '%Y-%m-%d')
+                d1 = datetime.strptime(end_date, '%Y-%m-%d')
+                days = (d1 - d0).days + 1
+                if days <= 7:
+                    chosen_provider = 'yfinance'
+                else:
+                    chosen_provider = 'massive'
+            else:
+                chosen_provider = 'yfinance'  # fallback
+        else:
+            chosen_provider = 'massive'
+        cache_timeframe = get_cache_timeframe(chosen_provider, timeframe)
+
+    # Use selected cache file if provided
+    if selected_cache_file:
+        cache_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'cache', str(chosen_provider), str(symbol), str(cache_timeframe), selected_cache_file))
+        if os.path.exists(cache_path):
+            data = pd.read_parquet(cache_path)
+            date_range = os.path.splitext(selected_cache_file)[0]
+        else:
+            data = None
+    else:
+        data = fetcher.cache.load(symbol, chosen_provider, cache_timeframe, 'parquet', date_range)
+        warning = f"No cached data for {symbol}/{chosen_provider}/{cache_timeframe}/{date_range}."
+        return warning, go.Figure(), go.Figure(), '', [], None, go.Figure()
     if data is None:
-        return f"No cached data for {symbol}/{provider}.", go.Figure(), go.Figure(), '', [], None, go.Figure()
+        warning = f"No data loaded for {symbol}/{chosen_provider}/{cache_timeframe}/{date_range}."
+        return warning, go.Figure(), go.Figure(), '', [], None, go.Figure()
+
     if strategy == 'sma_crossover':
         strat = SmaCrossoverStrategy(fast=fast, slow=slow)
     elif strategy == 'rsi_mean_reversion':
@@ -236,12 +379,26 @@ def update_dashboard(n_clicks, chart_toggles, selected_trade, symbol, provider, 
     ])
     # Equity curve
     eq_fig = go.Figure()
+    # Price & signals figure
+    price_fig = go.Figure()
     if 'equity' in chart_toggles:
         eq_fig.add_trace(go.Scatter(x=backtester.data.index, y=backtester.data['equity'], mode='lines', name='Equity'))
         eq_fig.update_layout(title='Equity Curve', xaxis_title='Date', yaxis_title='Equity')
     # Price + signals
-    price_fig = go.Figure()
-    if 'price' in chart_toggles:
+        # Use selected cache file if provided
+        ctx = dash.callback_context
+        cache_file = None
+        if ctx and ctx.states and 'cache-file-dropdown.value' in ctx.states:
+            cache_file = ctx.states['cache-file-dropdown.value']
+        if cache_file:
+            cache_path = os.path.join(os.path.dirname(__file__), '..', 'cache', chosen_provider, symbol, cache_timeframe, cache_file)
+            if os.path.exists(cache_path):
+                data = pd.read_parquet(cache_path)
+                date_range = os.path.splitext(cache_file)[0]
+            else:
+                data = None
+        else:
+            data = fetcher.cache.load(symbol, chosen_provider, cache_timeframe, 'parquet', date_range)
         price_fig.add_trace(go.Scatter(x=backtester.data.index, y=backtester.data['close'], mode='lines', name='Close'))
         buys = backtester.data[backtester.data['signal'] == 1]
         sells = backtester.data[backtester.data['signal'] == -1]
@@ -290,7 +447,19 @@ def download_trades(n_clicks, symbol, provider, strategy, fast, slow):
     if n_clicks == 0:
         return no_update
     fetcher = DataFetcher()
-    data = fetcher.cache.load(symbol, provider, 'parquet')
+    # For download, try to get timeframe and date range from State if available
+    import dash
+    ctx_inputs = dash.callback_context.states
+    timeframe = ctx_inputs.get('timeframe.value', '1d') if hasattr(ctx_inputs, 'get') else '1d'
+    start_date = ctx_inputs.get('start-date.date', None)
+    end_date = ctx_inputs.get('end-date.date', None)
+    date_range = f"{start_date}_to_{end_date}" if start_date and end_date else None
+    # Timeframe mapping for cache folder
+    tf_map = {'1d': 'day', '1min': 'minute', '1m': 'minute', '5min': 'minute', '1h': 'hour'}
+    cache_timeframe = timeframe
+    if provider == 'massive':
+        cache_timeframe = tf_map.get(timeframe, timeframe)
+    data = fetcher.cache.load(symbol, provider, cache_timeframe, 'parquet', date_range)
     if data is None:
         return no_update
     if strategy == 'sma_crossover':
@@ -312,6 +481,46 @@ def download_trades(n_clicks, symbol, provider, strategy, fast, slow):
         'filename': f"trades_{symbol}_{provider}.csv",
         'type': 'text/csv'
     }
+
+from dash.dependencies import Input, Output, State
+import glob
+import re
+
+# Helper to get earliest and latest date from cache
+
+def get_date_range_from_cache(symbol, provider, timeframe):
+    cache_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'cache'))
+    tf_map = {'1d': 'day', '1min': 'minute', '1m': 'minute', '5min': 'minute', '1h': 'hour'}
+    tf_folder = tf_map.get(timeframe, timeframe)
+    # Try both yfinance and massive if provider is 'auto'
+    providers = [provider] if provider != 'auto' else ['yfinance', 'massive']
+    all_dates = []
+    for prov in providers:
+        # Ensure all join arguments are str, not None
+        if not (cache_root and prov and symbol and tf_folder):
+            continue
+        folder = os.path.join(str(cache_root), str(prov), str(symbol), str(tf_folder))
+        if not os.path.isdir(folder):
+            continue
+        for f in glob.glob(os.path.join(folder, '*.parquet')):
+            m = re.search(r'(\d{4}-\d{2}-\d{2})_to_(\d{4}-\d{2}-\d{2})', f)
+            if m:
+                all_dates.append((m.group(1), m.group(2)))
+    if not all_dates:
+        return None, None
+    starts, ends = zip(*all_dates)
+    return min(starts), max(ends)
+
+@app.callback(
+    [Output('start-date', 'date'), Output('end-date', 'date')],
+    [Input('symbol', 'value'), Input('provider', 'value'), Input('timeframe', 'value')]
+)
+def update_date_range(symbol, provider, timeframe):
+    start, end = get_date_range_from_cache(symbol, provider, timeframe)
+    # If no data, clear the pickers
+    if not start or not end:
+        return None, None
+    return start, end
 
 if __name__ == '__main__':
     app.run(debug=True)

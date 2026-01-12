@@ -24,9 +24,18 @@ class DataFetcher:
         self.cache = DataCache()
         self.cache_fmt = cache_fmt
 
+
     def fetch_yfinance(self, symbol: str, start: str, end: str, interval: str = "1d") -> Optional[pd.DataFrame]:
         provider = 'yfinance'
-        cached = self.cache.load(symbol, provider, self.cache_fmt)
+        timeframe = interval
+        date_range = f"{start}_to_{end}"
+        # yFinance 1m limitation: only fetch last 7 days
+        if interval == '1m':
+            max_start = (datetime.today() - timedelta(days=7)).strftime('%Y-%m-%d')
+            if start < max_start:
+                print(f"[SKIP] {symbol} 1m {start} to {end}: yFinance only allows 1m data for the last 7 days.")
+                return None
+        cached = self.cache.load(symbol, provider, timeframe, self.cache_fmt, date_range)
         if cached is not None:
             return cached
         try:
@@ -42,7 +51,7 @@ class DataFetcher:
                 else:
                     df.index = df.index.tz_convert(eastern)
                 df.index.name = "datetime"
-                self.cache.save(df, symbol, provider, self.cache_fmt)
+                self.cache.save(df, symbol, provider, timeframe, self.cache_fmt, date_range)
                 return df
             else:
                 print(f"yFinance: No data returned for {symbol} from {start} to {end} (interval={interval}). Columns: {df.columns if df is not None else 'None'}")
@@ -55,27 +64,29 @@ class DataFetcher:
 
     def fetch_massive(self, symbol: str, start: str, end: str, timeframe: str = "day") -> Optional[pd.DataFrame]:
         provider = 'massive'
-        cached = self.cache.load(symbol, provider, self.cache_fmt)
+        # Map timeframe for massive
+        tf_map = {'1d': 'day', '1min': 'minute', '1m': 'minute', '5min': 'minute', '1h': 'hour'}
+        mapped_timeframe = tf_map.get(timeframe, timeframe)
+        date_range = f"{start}_to_{end}"
+        cache_path = self.cache._get_path(symbol, provider, mapped_timeframe, self.cache_fmt, date_range)
+        cached = self.cache.load(symbol, provider, mapped_timeframe, self.cache_fmt, date_range)
         if cached is not None:
+            print(f"[CACHE] Data already exists in {cache_path}")
             return cached
         if not self.polygon_api_key:
             raise ValueError("Polygon API key not set in environment.")
         client = PolygonClient(self.polygon_api_key)
         start_dt = pd.to_datetime(start).strftime('%Y-%m-%d')
         end_dt = pd.to_datetime(end).strftime('%Y-%m-%d')
-        bars = client.get_aggs(symbol, 1, timeframe, start_dt, end_dt)
+        bars = client.get_aggs(symbol, 1, mapped_timeframe, start_dt, end_dt)
         df = pd.DataFrame([bar.__dict__ for bar in bars])
         if not df.empty:
             df['datetime'] = pd.to_datetime(df['timestamp'], unit='ms')
-            # Localize to US/Eastern robustly
-            eastern = pytz.timezone('America/New_York')
-            df['datetime'] = pd.to_datetime(df['datetime'], utc=True)
-            df['datetime'] = df['datetime'].tz_convert(eastern)
             df.set_index('datetime', inplace=True)
-            self.cache.save(df, symbol, provider, self.cache_fmt)
+            self.cache.save(df, symbol, provider, mapped_timeframe, self.cache_fmt, date_range)
             return df
         else:
-            print(f"Massive: No data returned for {symbol} from {start} to {end} (timeframe={timeframe}).")
+            print(f"Massive: No data returned for {symbol} from {start} to {end} (timeframe={mapped_timeframe}).")
             return None
 def parse_period(period_str):
     import re
