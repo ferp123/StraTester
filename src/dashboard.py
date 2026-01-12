@@ -19,6 +19,7 @@ from src.data_fetchers import DataFetcher
 from src.strategies.sma_crossover import SmaCrossoverStrategy
 from src.strategies.rsi_mean_reversion import RsiMeanReversionStrategy
 from src.strategies.macd_crossover import MACDCrossoverStrategy
+from src.strategies.impulse_macd import ImpulseMACDStrategy
 from src.backtester import Backtester
 
 
@@ -132,7 +133,8 @@ app.layout = dbc.Container([
                             dcc.Dropdown(id='strategy', options=[
                                 {'label': 'SMA Crossover', 'value': 'sma_crossover'},
                                 {'label': 'RSI Mean Reversion', 'value': 'rsi_mean_reversion'},
-                                {'label': 'MACD Crossover', 'value': 'macd_crossover'}
+                                {'label': 'MACD Crossover', 'value': 'macd_crossover'},
+                                {'label': 'Impulse MACD', 'value': 'impulse_macd'}
                             ], value='sma_crossover', className="mb-2")
                         ], md=3),
                         dbc.Col([
@@ -157,7 +159,11 @@ app.layout = dbc.Container([
                         dbc.Col([
                             html.Label(["Risk Factor ", html.I(className="bi bi-info-circle", id="tt-risk-factor")], className="form-label fw-bold"),
                             dcc.Input(id='risk-factor', value=1.0, type='number', min=0.01, max=10, step=0.01, className="form-control mb-2")
-                        ], md=3),
+                        ], md=2),
+                        dbc.Col([
+                            html.Label(["Risk:Reward ", html.I(className="bi bi-info-circle", id="tt-risk-reward")], className="form-label fw-bold"),
+                            dcc.Input(id='risk-reward', value=3.0, type='number', min=0.5, max=10, step=0.1, className="form-control mb-2")
+                        ], md=2),
                         dbc.Col([
                             html.Label(["Slippage (%) ", html.I(className="bi bi-info-circle", id="tt-slippage")], className="form-label fw-bold"),
                             dcc.Input(id='slippage', value=0.0, type='number', min=0, max=10, step=0.01, className="form-control mb-2")
@@ -196,7 +202,33 @@ app.layout = dbc.Container([
                     html.Div(id='metrics', className="mb-2")
                 ])
             ], className="mb-4 shadow-sm")
-        ], width=12)
+        ], width=8),
+        dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    html.H4("Win/Loss Pie", className="card-title mb-3"),
+                    dcc.Graph(id='win-loss-pie')
+                ])
+            ], className="mb-4 shadow-sm"),
+        ], width=4),
+    ]),
+    dbc.Row([
+        dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    html.H4("Biggest Winner Trade", className="card-title mb-3"),
+                    dcc.Graph(id='biggest-winner-chart')
+                ])
+            ], className="mb-4 shadow-sm"),
+        ], width=6),
+        dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    html.H4("Biggest Loser Trade", className="card-title mb-3"),
+                    dcc.Graph(id='biggest-loser-chart')
+                ])
+            ], className="mb-4 shadow-sm"),
+        ], width=6),
     ]),
     dbc.Row([
         dbc.Col([
@@ -239,45 +271,60 @@ app.layout = dbc.Container([
 
 
 def compute_extra_metrics(backtester, results):
+    # Biggest winner/loser
+    if hasattr(backtester, 'trade_log') and not backtester.trade_log.empty:
+        biggest_win = backtester.trade_log.loc[backtester.trade_log['pnl'].idxmax()]
+        biggest_loss = backtester.trade_log.loc[backtester.trade_log['pnl'].idxmin()]
+        results['biggest_win'] = biggest_win
+        results['biggest_loss'] = biggest_loss
     # Add more detailed metrics
     equity = backtester.data['equity']
     returns = backtester.data['strategy_returns']
     n_years = (equity.index[-1] - equity.index[0]).days / 365.25
     cagr = (equity.iloc[-1] / equity.iloc[0]) ** (1 / n_years) - 1 if n_years > 0 else np.nan
-    win_trades = backtester.data['strategy_returns'][backtester.data['strategy_returns'] > 0].count()
-    loss_trades = backtester.data['strategy_returns'][backtester.data['strategy_returns'] < 0].count()
-    win_rate = win_trades / (win_trades + loss_trades) if (win_trades + loss_trades) > 0 else np.nan
+    # Use trade log for number of trades and win/loss
+    if hasattr(backtester, 'trade_log') and not backtester.trade_log.empty:
+        num_trades = len(backtester.trade_log)
+        win_trades = (backtester.trade_log['pnl'] > 0).sum()
+        loss_trades = (backtester.trade_log['pnl'] < 0).sum()
+        win_rate = win_trades / num_trades if num_trades > 0 else np.nan
+        avg_win = backtester.trade_log[backtester.trade_log['pnl'] > 0]['pnl'].mean()
+        avg_loss = backtester.trade_log[backtester.trade_log['pnl'] < 0]['pnl'].mean()
+    else:
+        num_trades = 0
+        win_trades = 0
+        loss_trades = 0
+        win_rate = np.nan
+        avg_win = np.nan
+        avg_loss = np.nan
     avg_trade = returns.mean()
     results['CAGR'] = cagr
     results['win_rate'] = win_rate
     results['avg_trade'] = avg_trade
+    results['num_trades'] = num_trades
+    results['avg_win'] = avg_win
+    results['avg_loss'] = avg_loss
     return results
 
 def trades_to_table(trades, backtester):
-    if trades.empty:
+    if hasattr(backtester, 'trade_log') and not backtester.trade_log.empty:
+        rows = []
+        for _, t in backtester.trade_log.iterrows():
+            rows.append(html.Tr([
+                html.Td(str(t['entry'])),
+                html.Td(str(t['exit'])),
+                html.Td('Long' if t['side'] == 1 else 'Short'),
+                html.Td(f"{t['entry_price']:.2f}" if t['entry_price'] else ''),
+                html.Td(f"{t['exit_price']:.2f}" if t['exit_price'] else ''),
+                html.Td(f"{t['pnl']:.2f}" if t['pnl'] else ''),
+                html.Td(t['exit_reason']),
+            ]))
+        return html.Table([
+            html.Thead(html.Tr([html.Th(h) for h in ['Entry', 'Exit', 'Side', 'Entry Price', 'Exit Price', 'PnL', 'Exit Reason']])),
+            html.Tbody(rows)
+        ], style={'width': '100%', 'border': '1px solid #ccc'})
+    else:
         return html.Div("No trades.")
-    rows = []
-    for _, t in trades.iterrows():
-        entry = t['entry']
-        exit = t['exit']
-        side = t['side']
-        entry_price = backtester.data.loc[entry, 'close'] if entry in backtester.data.index else None
-        exit_price = backtester.data.loc[exit, 'close'] if exit in backtester.data.index else None
-        pnl = (exit_price - entry_price) * side if entry_price and exit_price else None
-        duration = (exit - entry).days if hasattr(exit, 'days') else ''
-        rows.append(html.Tr([
-            html.Td(str(entry)),
-            html.Td(str(exit)),
-            html.Td('Long' if side == 1 else 'Short'),
-            html.Td(f"{entry_price:.2f}" if entry_price else ''),
-            html.Td(f"{exit_price:.2f}" if exit_price else ''),
-            html.Td(f"{pnl:.2f}" if pnl else ''),
-            html.Td(str(duration))
-        ]))
-    return html.Table([
-        html.Thead(html.Tr([html.Th(h) for h in ['Entry', 'Exit', 'Side', 'Entry Price', 'Exit Price', 'PnL', 'Duration']])),
-        html.Tbody(rows)
-    ], style={'width': '100%', 'border': '1px solid #ccc'})
 
 
 # Store trades and backtester in a global cache for callbacks
@@ -286,18 +333,31 @@ import dash
 global_cache = {}
 
 @app.callback(
-    [Output('metrics', 'children'), Output('equity-curve', 'figure'), Output('price-signals', 'figure'), Output('trade-table', 'children'), Output('trade-selector', 'options'), Output('trade-selector', 'value'), Output('trade-candlestick', 'figure')],
+    [
+        Output('metrics', 'children'),
+        Output('equity-curve', 'figure'),
+        Output('price-signals', 'figure'),
+        Output('trade-table', 'children'),
+        Output('trade-selector', 'options'),
+        Output('trade-selector', 'value'),
+        Output('trade-candlestick', 'figure'),
+        Output('biggest-winner-chart', 'figure'),
+        Output('biggest-loser-chart', 'figure'),
+        Output('win-loss-pie', 'figure'),
+    ],
     [Input('run-btn', 'n_clicks'), Input('chart-toggles', 'value'), Input('trade-selector', 'value')],
     [
         State('symbol', 'value'), State('provider', 'value'), State('strategy', 'value'),
         State('fast', 'value'), State('slow', 'value'),
-        State('starting-capital', 'value'), State('risk-factor', 'value'), State('slippage', 'value'), State('commission', 'value'),
+        State('starting-capital', 'value'), State('risk-factor', 'value'), State('risk-reward', 'value'), State('slippage', 'value'), State('commission', 'value'),
         State('cache-file-dropdown', 'value')
     ]
 )
-def update_dashboard(n_clicks, chart_toggles, selected_trade, symbol, provider, strategy, fast, slow, starting_capital, risk_factor, slippage, commission, selected_cache_file):
+def update_dashboard(n_clicks, chart_toggles, selected_trade, symbol, provider, strategy, fast, slow, starting_capital, risk_factor, risk_reward, slippage, commission, selected_cache_file):
     if n_clicks == 0:
-        return '', go.Figure(), go.Figure(), '', [], None, go.Figure()
+        empty_fig = go.Figure()
+        win_loss_pie = go.Figure()
+        return '', empty_fig, empty_fig, '', [], None, empty_fig, empty_fig, empty_fig, win_loss_pie
     fetcher = DataFetcher()
     # Get timeframe and date range from UI
     ctx_inputs = dash.callback_context.inputs
@@ -348,10 +408,14 @@ def update_dashboard(n_clicks, chart_toggles, selected_trade, symbol, provider, 
     else:
         data = fetcher.cache.load(symbol, chosen_provider, cache_timeframe, 'parquet', date_range)
         warning = f"No cached data for {symbol}/{chosen_provider}/{cache_timeframe}/{date_range}."
-        return warning, go.Figure(), go.Figure(), '', [], None, go.Figure()
+        empty_fig = go.Figure()
+        win_loss_pie = go.Figure()
+        return warning, empty_fig, empty_fig, '', [], None, empty_fig, empty_fig, empty_fig, win_loss_pie
     if data is None:
         warning = f"No data loaded for {symbol}/{chosen_provider}/{cache_timeframe}/{date_range}."
-        return warning, go.Figure(), go.Figure(), '', [], None, go.Figure()
+        empty_fig = go.Figure()
+        win_loss_pie = go.Figure()
+        return warning, empty_fig, empty_fig, '', [], None, empty_fig, empty_fig, empty_fig, win_loss_pie
 
     if strategy == 'sma_crossover':
         strat = SmaCrossoverStrategy(fast=fast, slow=slow)
@@ -359,24 +423,106 @@ def update_dashboard(n_clicks, chart_toggles, selected_trade, symbol, provider, 
         strat = RsiMeanReversionStrategy()
     elif strategy == 'macd_crossover':
         strat = MACDCrossoverStrategy(fast=fast, slow=slow)
+    elif strategy == 'impulse_macd':
+        strat = ImpulseMACDStrategy(fast=fast, slow=slow, signal=9, hist_clip=0.5, lookback_days=22)
     else:
-        return f"Unknown strategy: {strategy}", go.Figure(), go.Figure(), '', [], None, go.Figure()
+        empty_fig = go.Figure()
+        win_loss_pie = go.Figure()
+        return f"Unknown strategy: {strategy}", empty_fig, empty_fig, '', [], None, empty_fig, empty_fig, empty_fig, win_loss_pie
     # Only pass supported args to Backtester
-    backtester = Backtester(data, strat, initial_cash=starting_capital, fee=commission)
+    backtester = Backtester(data, strat, initial_cash=starting_capital, fee=commission, risk_factor=risk_factor, risk_reward=risk_reward)
     # risk_factor and slippage are available for future use
     results = backtester.run()
     results = compute_extra_metrics(backtester, results)
-    # Metrics
-    metrics = html.Ul([
-        html.Li(f"Final Equity: {results['final_equity']:.2f}"),
-        html.Li(f"Total Return: {results['total_return']:.2%}"),
-        html.Li(f"Max Drawdown: {results['max_drawdown']:.2%}"),
-        html.Li(f"Sharpe Ratio: {results['sharpe']:.2f}"),
-        html.Li(f"CAGR: {results['CAGR']:.2%}"),
-        html.Li(f"Win Rate: {results['win_rate']:.2%}"),
-        html.Li(f"Avg Trade: {results['avg_trade']:.4f}"),
-        html.Li(f"Number of Trades: {results['num_trades']}")
-    ])
+    # Metrics side by side
+    metrics = html.Div([
+        html.Div([
+            html.H5("Backtest Settings"),
+            html.Ul([
+                html.Li(f"Symbol: {symbol}"),
+                html.Li(f"Provider: {provider}"),
+                html.Li(f"Strategy: {strategy}"),
+                html.Li(f"Fast: {fast}" if fast is not None else None),
+                html.Li(f"Slow: {slow}" if slow is not None else None),
+                html.Li(f"Starting Capital: {starting_capital}"),
+                html.Li(f"Risk Factor: {risk_factor}"),
+                html.Li(f"Risk/Reward: {risk_reward}"),
+                html.Li(f"Slippage: {slippage}"),
+                html.Li(f"Commission: {commission}"),
+                html.Li(f"Cache File: {selected_cache_file}"),
+            ])
+        ], style={"flex": "1", "margin-right": "32px", "minWidth": "220px"}),
+        html.Div([
+            html.H5("Test Results"),
+            html.Ul([
+                html.Li(f"Final Equity: {results['final_equity']:.2f}"),
+                html.Li(f"Total Return: {results['total_return']:.2%}"),
+                html.Li(f"Max Drawdown: {results['max_drawdown']:.2%}"),
+                html.Li(f"Sharpe Ratio: {results['sharpe']:.2f}"),
+                html.Li(f"CAGR: {results['CAGR']:.2%}"),
+                html.Li(f"Win Rate: {results['win_rate']:.2%}"),
+                html.Li(f"Avg Trade: {results['avg_trade']:.4f}"),
+                html.Li(f"Avg Win: {results.get('avg_win', 0):.2f}"),
+                html.Li(f"Avg Loss: {results.get('avg_loss', 0):.2f}"),
+                html.Li(f"Number of Trades: {results['num_trades']}"),
+                html.Li(f"Biggest Winner: {results['biggest_win']['pnl']:.2f}" if 'biggest_win' in results else "Biggest Winner: N/A"),
+                html.Li(f"Biggest Loser: {results['biggest_loss']['pnl']:.2f}" if 'biggest_loss' in results else "Biggest Loser: N/A"),
+            ])
+        ], style={"flex": "1", "minWidth": "220px"}),
+    ], style={"display": "flex", "flex-direction": "row", "align-items": "flex-start", "gap": "16px"})
+
+    # Win/Loss Pie Chart
+    win_loss_pie = go.Figure()
+    if hasattr(backtester, 'trade_log') and not backtester.trade_log.empty:
+        win_trades = (backtester.trade_log['pnl'] > 0).sum()
+        loss_trades = (backtester.trade_log['pnl'] < 0).sum()
+        win_loss_pie = go.Figure(data=[go.Pie(
+            labels=['Winners', 'Losers'],
+            values=[win_trades, loss_trades],
+            marker=dict(colors=['#28a745', '#dc3545']),
+            hole=0.4
+        )])
+        win_loss_pie.update_layout(title="Win/Loss Breakdown")
+    # Prepare charts for biggest winner/loser
+    biggest_win_fig = go.Figure()
+    biggest_loss_fig = go.Figure()
+    if 'biggest_win' in results:
+        t = results['biggest_win']
+        df = backtester.data.loc[t['entry']:t['exit']]
+        biggest_win_fig.add_trace(go.Candlestick(
+            x=df.index,
+            open=df['open'], high=df['high'], low=df['low'], close=df['close'],
+            name='Candles',
+            increasing_line_color='green', decreasing_line_color='red',
+        ))
+        # Entry/exit markers
+        biggest_win_fig.add_trace(go.Scatter(x=[t['entry']], y=[t['entry_price']], mode='markers', marker=dict(color='blue', size=12, symbol='star'), name='Entry'))
+        biggest_win_fig.add_trace(go.Scatter(x=[t['exit']], y=[t['exit_price']], mode='markers', marker=dict(color='orange', size=12, symbol='x'), name='Exit'))
+        # Exit trigger marker (if available)
+        if 'exit_reason' in t and isinstance(t['exit_reason'], str):
+            biggest_win_fig.add_annotation(x=t['exit'], y=t['exit_price'],
+                                          text=f"Exit: {t['exit_reason']}",
+                                          showarrow=True, arrowhead=1, ax=0, ay=-40,
+                                          bgcolor="#fffbe6", bordercolor="#ff9900", borderpad=4)
+        biggest_win_fig.update_layout(title=f"Biggest Winner: {t['entry']} → {t['exit']} ({t['exit_reason']})", xaxis_title='Date', yaxis_title='Price')
+    if 'biggest_loss' in results:
+        t = results['biggest_loss']
+        df = backtester.data.loc[t['entry']:t['exit']]
+        biggest_loss_fig.add_trace(go.Candlestick(
+            x=df.index,
+            open=df['open'], high=df['high'], low=df['low'], close=df['close'],
+            name='Candles',
+            increasing_line_color='green', decreasing_line_color='red',
+        ))
+        biggest_loss_fig.add_trace(go.Scatter(x=[t['entry']], y=[t['entry_price']], mode='markers', marker=dict(color='blue', size=12, symbol='star'), name='Entry'))
+        biggest_loss_fig.add_trace(go.Scatter(x=[t['exit']], y=[t['exit_price']], mode='markers', marker=dict(color='orange', size=12, symbol='x'), name='Exit'))
+        # Exit trigger marker (if available)
+        if 'exit_reason' in t and isinstance(t['exit_reason'], str):
+            biggest_loss_fig.add_annotation(x=t['exit'], y=t['exit_price'],
+                                            text=f"Exit: {t['exit_reason']}",
+                                            showarrow=True, arrowhead=1, ax=0, ay=-40,
+                                            bgcolor="#fffbe6", bordercolor="#ff9900", borderpad=4)
+        biggest_loss_fig.update_layout(title=f"Biggest Loser: {t['entry']} → {t['exit']} ({t['exit_reason']})", xaxis_title='Date', yaxis_title='Price')
     # Equity curve
     eq_fig = go.Figure()
     # Price & signals figure
@@ -433,9 +579,14 @@ def update_dashboard(n_clicks, chart_toggles, selected_trade, symbol, provider, 
         trade_fig.add_trace(go.Scatter(x=[entry], y=[df.loc[entry, 'close']], mode='markers', marker=dict(color='blue', size=12, symbol='star'), name='Entry'))
         # Exit marker
         trade_fig.add_trace(go.Scatter(x=[exit], y=[df.loc[exit, 'close']], mode='markers', marker=dict(color='orange', size=12, symbol='x'), name='Exit'))
-        # (Optional) SL/TP markers: if your strategy provides them, add here
+        # Exit trigger marker (if available)
+        if 'exit_reason' in t and isinstance(t['exit_reason'], str):
+            trade_fig.add_annotation(x=exit, y=df.loc[exit, 'close'],
+                                    text=f"Exit: {t['exit_reason']}",
+                                    showarrow=True, arrowhead=1, ax=0, ay=-40,
+                                    bgcolor="#fffbe6", bordercolor="#ff9900", borderpad=4)
         trade_fig.update_layout(title=f"Trade {trade_value+1}: {entry} → {exit}", xaxis_title='Date', yaxis_title='Price')
-    return metrics, eq_fig, price_fig, trade_table, trade_options, trade_value, trade_fig
+    return metrics, eq_fig, price_fig, trade_table, trade_options, trade_value, trade_fig, biggest_win_fig, biggest_loss_fig, win_loss_pie
 
 # Download trades as CSV
 @app.callback(
@@ -468,6 +619,8 @@ def download_trades(n_clicks, symbol, provider, strategy, fast, slow):
         strat = RsiMeanReversionStrategy()
     elif strategy == 'macd_crossover':
         strat = MACDCrossoverStrategy(fast=fast, slow=slow)
+    elif strategy == 'impulse_macd':
+        strat = ImpulseMACDStrategy(fast=fast, slow=slow, signal=9, hist_clip=0.5, lookback_days=22)
     else:
         return no_update
     backtester = Backtester(data, strat)

@@ -2,36 +2,37 @@
 
 ## 1. Project Setup
 
-- [ ] Set up Python 3.11.14 environment
-- [ ] Install dependencies (vectorbt, Dash, yfinance, alpaca-py, polygon-api-client, pandas, numpy, plotly, python-dotenv, pytz)
+- [x] Set up Python 3.11.14 environment
+- [x] Install dependencies (vectorbt, Dash, yfinance, alpaca-py, polygon-api-client, pandas, numpy, plotly, python-dotenv, pytz)
 - [x] Configure .env for API keys
 - [x] Git
 
 ## 2. Data Layer
 
-- [ ] Implement data fetchers for Massive (Polygon), Alpaca, yFinance
-- [ ] Implement local caching (parquet/csv/feather)
-- [ ] Ensure all data is timezone-aware (New York)
+- [x] Implement data fetchers for Massive (Polygon), Alpaca, yFinance
+- [x] Implement local caching (parquet/csv/feather)
+- [x] Ensure all data is timezone-aware (New York)
 
 ## 3. Strategy Layer
 
-- [ ] Define strategy interface (Python, vectorbt, numpy)
-- [ ] Create sample strategies
+- [x] Define strategy interface (Python, vectorbt, numpy)
+- [x] Create sample strategies
 - [x] MACD Crossover strategy implemented and registered
 
 ## 4. Backtesting Engine
 
-- [ ] Build vectorized backtesting engine
-- [ ] Support forward/backward testing with date ranges
-- [ ] Integrate with cached data
+- [x] Build vectorized backtesting engine
+- [x] Support forward/backward testing with date ranges
+- [x] Integrate with cached data
 - [x] Signal-based position holding and trade extraction logic validated
 
 ## 5. Dashboard
 
-- [ ] Set up Dash/Plotly dashboard
-- [ ] Display standard trading metrics
-- [ ] Add interactive charts and analysis
+- [x] Set up Dash/Plotly dashboard
+- [x] Display standard trading metrics
+- [x] Add interactive charts and analysis
 - [x] Dashboard extended for new strategies, custom CSS, and callback fixes
+- [x] Cache file selection and robust error handling
 
 ## 6. Paper Trading
 
@@ -40,7 +41,7 @@
 
 ## 7. Error Handling & Logging
 
-- [ ] Implement centralized error handling
+- [x] Implement centralized error handling in dashboard and data layer
 - [ ] Set up logging with Python's logging module
 
 ## 8. Unit Testing

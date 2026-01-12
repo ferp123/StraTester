@@ -13,6 +13,7 @@ STRATEGY_MAP = {
     'sma_crossover': 'src.strategies.sma_crossover.SmaCrossoverStrategy',
     'rsi_mean_reversion': 'src.strategies.rsi_mean_reversion.RsiMeanReversionStrategy',
     'macd_crossover': 'src.strategies.macd_crossover.MACDCrossoverStrategy',
+    'impulse_macd': 'src.strategies.impulse_macd.ImpulseMACDStrategy',
 }
 
 def get_strategy_class(strategy_name):
@@ -31,6 +32,8 @@ def main():
     parser.add_argument('--slow', type=int, default=15, help='Slow period (for SMA Crossover)')
     parser.add_argument('--cash', type=float, default=100_000, help='Initial cash')
     parser.add_argument('--fee', type=float, default=0.0, help='Per-trade fee')
+    parser.add_argument('--risk_factor', type=float, default=1.0, help='Risk factor (multiplier for risk per trade, e.g. 1 = 1% of equity)')
+    parser.add_argument('--risk_reward', type=float, default=3.0, help='Risk:Reward ratio (e.g. 3 = 3:1)')
     parser.add_argument('--timeframe', type=str, default='1d', help='Timeframe (e.g. 1d, 1min, 5min, 1h)')
     parser.add_argument('--date_range', type=str, default=None, help='Date range string (e.g. 2021-01-01_to_2026-01-12)')
     args = parser.parse_args()
@@ -47,8 +50,15 @@ def main():
         return
 
     StrategyClass = get_strategy_class(args.strategy)
-    strategy = StrategyClass(fast=args.fast, slow=args.slow)
-    backtester = Backtester(data, strategy, initial_cash=args.cash, fee=args.fee)
+    # For impulse_macd, pass extra params
+    if args.strategy == 'impulse_macd':
+        strategy = StrategyClass(fast=args.fast, slow=args.slow, signal=9, hist_clip=0.5, lookback_days=22)
+    else:
+        strategy = StrategyClass(fast=args.fast, slow=args.slow)
+    backtester = Backtester(
+        data, strategy, initial_cash=args.cash, fee=args.fee,
+        risk_factor=args.risk_factor, risk_reward=args.risk_reward
+    )
     results = backtester.run()
     print("Backtest Results:")
     for k, v in results.items():

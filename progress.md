@@ -15,3 +15,6 @@
 - Fixed callback errors and ensured dashboard extensibility for new strategies
 - Validated backtester logic for signal-based position holding and trade extraction
 - Confirmed modular strategy support and vectorized backtesting pipeline
+- Added cache file selection and robust error handling to dashboard
+- Cleaned up repo, added cache/ to .gitignore, and committed all changes
+- Dashboard now reliably produces test results from selected cached data
