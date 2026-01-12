@@ -1,0 +1,75 @@
+/* Custom dark theme for StrategyTester Dashboard */
+
+html body,
+body.dash-bootstrap,
+body {
+  background-color: #181a1b !important;
+  color: #e0e0e0 !important;
+}
+
+.card,
+.card-body,
+.card-title,
+.form-label,
+.form-control,
+.dropdown,
+.table,
+.table th,
+.table td {
+  background-color: #23272b !important;
+  color: #e0e0e0 !important;
+  border-color: #343a40 !important;
+}
+
+input,
+select,
+.form-control,
+.dropdown-menu {
+  background-color: #23272b !important;
+  color: #e0e0e0 !important;
+  border: 1px solid #343a40 !important;
+}
+
+.btn-primary {
+  background-color: #007bff !important;
+  border-color: #007bff !important;
+}
+
+.btn-secondary {
+  background-color: #6c757d !important;
+  border-color: #6c757d !important;
+}
+
+h1,
+h4,
+label,
+.fw-bold {
+  color: #f8f9fa !important;
+}
+
+.table {
+  background-color: #23272b !important;
+  color: #e0e0e0 !important;
+}
+
+.table th,
+.table td {
+  border-color: #343a40 !important;
+}
+
+.dash-graph .js-plotly-plot .plotly {
+  background-color: #23272b !important;
+}
+
+::-webkit-input-placeholder {
+  color: #b0b0b0 !important;
+}
+::-moz-placeholder {
+  color: #b0b0b0 !important;
+}
+:-ms-input-placeholder {
+  color: #b0b0b0 !important;
+}
+::placeholder {
+  color: #b0b0b0 !important;
+}

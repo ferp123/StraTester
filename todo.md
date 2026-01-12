@@ -17,18 +17,21 @@
 
 - [ ] Define strategy interface (Python, vectorbt, numpy)
 - [ ] Create sample strategies
+- [x] MACD Crossover strategy implemented and registered
 
 ## 4. Backtesting Engine
 
 - [ ] Build vectorized backtesting engine
 - [ ] Support forward/backward testing with date ranges
 - [ ] Integrate with cached data
+- [x] Signal-based position holding and trade extraction logic validated
 
 ## 5. Dashboard
 
 - [ ] Set up Dash/Plotly dashboard
 - [ ] Display standard trading metrics
 - [ ] Add interactive charts and analysis
+- [x] Dashboard extended for new strategies, custom CSS, and callback fixes
 
 ## 6. Paper Trading
 

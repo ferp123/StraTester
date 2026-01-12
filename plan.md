@@ -16,6 +16,13 @@ A scalable, vectorized backtesting and paper trading system for stocks using Pyt
 - **CI/CD**: Automated testing and deployment using GitHub Actions.
 - **Documentation**: Structured docs using Markdown in a docs/ directory, with docstrings and usage examples.
 
+## Recent Progress (2026-01-12)
+
+- Added MACD Crossover strategy and registered it in dashboard and CLI
+- Improved dashboard UI/UX, custom CSS, and analytics
+- Fixed callback errors and validated extensibility for new strategies
+- Enhanced backtester logic for signal-based trading and trade extraction
+
 ## Key Features
 
 - Fast, vectorized computation (vectorbt, numpy, pandas)
