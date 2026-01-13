@@ -3,7 +3,7 @@ Impulse MACD Strategy for StrategyTester
 """
 import pandas as pd
 import numpy as np
-from src.strategy_interface import Strategy
+from strategy_interface import Strategy
 
 class ImpulseMACDStrategy(Strategy):
     def __init__(self, fast=12, slow=26, signal=9, hist_clip=0.5, lookback_days=22):

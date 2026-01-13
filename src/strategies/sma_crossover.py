@@ -5,7 +5,7 @@ Implements the Strategy interface for demonstration and testing.
 
 import pandas as pd
 from typing import Dict, Any
-from src.strategy_interface import Strategy
+from strategy_interface import Strategy
 
 class SmaCrossoverStrategy(Strategy):
     def __init__(self, fast: int = 10, slow: int = 30, **kwargs):

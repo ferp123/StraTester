@@ -1,4 +1,86 @@
-
+Warning: p: Support for defaultProps will be removed from function components in a future major release. Use JavaScript default parameters instead. Component Stack: 
+    p SingleDatePickerInput.js:116
+    o withStyles.js:193
+    withStyles(p) unknown:0
+    n SingleDatePickerInputController.js:137
+    div unknown:0
+    t OutsideClickHandler.js:68
+    div unknown:0
+    n SingleDatePicker.js:158
+    o withStyles.js:193
+    withStyles(n) unknown:0
+    div unknown:0
+    d LoadingElement.js:11
+    h React
+    Suspense unknown:0
+    c React
+    CheckedComponent CheckedComponent.tsx:5
+    DashContextProvider DashContext.tsx:6
+    ComponentErrorBoundary React
+    DashWrapper DashWrapper.tsx:13
+    div unknown:0
+    ms dash_bootstrap_components.v2_0_4m1768134055.min.js:2
+    xs dash_bootstrap_components.v2_0_4m1768134055.min.js:2
+    CheckedComponent CheckedComponent.tsx:5
+    DashContextProvider DashContext.tsx:6
+    ComponentErrorBoundary React
+    DashWrapper DashWrapper.tsx:13
+    div unknown:0
+    bp dash_bootstrap_components.v2_0_4m1768134055.min.js:2
+    xp dash_bootstrap_components.v2_0_4m1768134055.min.js:2
+    CheckedComponent CheckedComponent.tsx:5
+    DashContextProvider DashContext.tsx:6
+    ComponentErrorBoundary React
+    DashWrapper DashWrapper.tsx:13
+    div unknown:0
+    Wn dash_bootstrap_components.v2_0_4m1768134055.min.js:2
+    Or dash_bootstrap_components.v2_0_4m1768134055.min.js:2
+    CheckedComponent CheckedComponent.tsx:5
+    DashContextProvider DashContext.tsx:6
+    ComponentErrorBoundary React
+    DashWrapper DashWrapper.tsx:13
+    div unknown:0
+    pr dash_bootstrap_components.v2_0_4m1768134055.min.js:2
+    vr dash_bootstrap_components.v2_0_4m1768134055.min.js:2
+    CheckedComponent CheckedComponent.tsx:5
+    DashContextProvider DashContext.tsx:6
+    ComponentErrorBoundary React
+    DashWrapper DashWrapper.tsx:13
+    div unknown:0
+    ms dash_bootstrap_components.v2_0_4m1768134055.min.js:2
+    xs dash_bootstrap_components.v2_0_4m1768134055.min.js:2
+    CheckedComponent CheckedComponent.tsx:5
+    DashContextProvider DashContext.tsx:6
+    ComponentErrorBoundary React
+    DashWrapper DashWrapper.tsx:13
+    div unknown:0
+    bp dash_bootstrap_components.v2_0_4m1768134055.min.js:2
+    xp dash_bootstrap_components.v2_0_4m1768134055.min.js:2
+    CheckedComponent CheckedComponent.tsx:5
+    DashContextProvider DashContext.tsx:6
+    ComponentErrorBoundary React
+    DashWrapper DashWrapper.tsx:13
+    div unknown:0
+    js dash_bootstrap_components.v2_0_4m1768134055.min.js:2
+    Ps dash_bootstrap_components.v2_0_4m1768134055.min.js:2
+    CheckedComponent CheckedComponent.tsx:5
+    DashContextProvider DashContext.tsx:6
+    ComponentErrorBoundary React
+    DashWrapper DashWrapper.tsx:13
+    div unknown:0
+    div unknown:0
+    Debug React
+    DevtoolProvider DevtoolContext.js:5
+    DebugMenu React
+    div unknown:0
+    UnconnectedGlobalErrorContainer React
+    ConnectFunction Redux
+    UnconnectedContainer React
+    ConnectFunction Redux
+    UnconnectedAppContainer React
+    Redux 2
+    AppProvider AppProvider.react.tsx:13
+<anonymous code>:1:147461
 Warning: componentWillMount has been renamed, and is not recommended for use. See https://reactjs.org/link/unsafe-component-lifecycles for details.
 
 * Move code with side effects to componentDidMount, and set initial state in the constructor.
@@ -11,7 +93,7 @@ Warning: componentWillReceiveProps has been renamed, and is not recommended for 
 * If you're updating state whenever props change, refactor your code to use memoization techniques or move it to static getDerivedStateFromProps. Learn more at: https://reactjs.org/link/derived-state
 * Rename componentWillReceiveProps to UNSAFE_componentWillReceiveProps to suppress this warning in non-strict mode. In React 18.x, only the UNSAFE_ name will work. To rename all deprecated lifecycles to their new names, you can run `npx react-codemod rename-unsafe-lifecycles` in your project source folder.
 
-Please update the following components: t <anonymous code>:1:147461
+Please update the following components: n, t <anonymous code>:1:147461
 Source map error: Error: JSON.parse: unexpected character at line 1 column 1 of the JSON data
 Stack in the worker:parseSourceMapInput@resource://devtools/client/shared/vendor/source-map/lib/util.js:163:15
 _factory@resource://devtools/client/shared/vendor/source-map/lib/source-map-consumer.js:1069:22
@@ -20,25 +102,3 @@ _fetch@resource://devtools/client/shared/source-map-loader/utils/fetchSourceMap.
 
 Resource URL: http://127.0.0.1:8050/%3Canonymous%20code%3E
 Source Map URL: installHook.js.map
-
-XHRPOST
-http://127.0.0.1:8050/_dash-update-component
-[HTTP/1.1 500 INTERNAL SERVER ERROR 3ms]
-
-XHRPOST
-http://127.0.0.1:8050/_dash-update-component
-[HTTP/1.1 500 INTERNAL SERVER ERROR 11ms]
-
-Object { message: "Callback error updating ..metrics.children...equity-curve.figure...price-signals.figure...trade-table.children...trade-selector.options...trade-selector.value...trade-candlestick.figure..", html: `<!doctype html>\n<html lang=en>\n  <head>\n    <title>TypeError: update_dashboard() missing 4 required positional arguments: &#39;starting_capital&#39;, &#39;risk_factor&#39;, &#39;slippage&#39;, and &#39;commission&#39;\n // Werkzeug Debugger</title>\n    <link rel="stylesheet" href="?__debugger__=yes&amp;cmd=resource&amp;f=style.css">\n    <link rel="shortcut icon"\n        href="?__debugger__=yes&amp;cmd=resource&amp;f=console.png">\n    <script src="?__debugger__=yes&amp;cmd=resource&amp;f=debugger.js"></script>\n    <script>\n      var CONSOLE_MODE = false,\n          EVALEX = true,\n          EVALEX_TRUSTED = true,\n          SECRET = "ilEANRYQsPcUhGTUmRHk";\n    </script>\n  </head>\n  <body style="background-color: #fff">\n    <div class="debugger">\n<h1>TypeError</h1>\n<div class="detail">\n  <p class="errormsg">TypeError: update_dashboard() missing 4 required positional arguments: &#39;starting_capital&#39;, &#39;risk_factor&#39;, &#39;slippage&#39;, and &#39;commission&#39;\n</p>\n</div>\n<h2 class="traceback">Traceback <em>(most recent call last)</em></h2>\n<div class="traceback noframe-traceback">\n  <h3></h3>\n  <ul></ul>\n  <blockquote>TypeError: update_dashboard() missing 4 required positional arguments: &#39;starting_capital&#39;, &#39;risk_factor&#39;, &#39;slippage&#39;, and &#39;commission&#39;\n</blockquote>\n</div>\n\n<div class="plain">\n    <p>\n      This is the Copy/Paste friendly version of the traceback.\n    </p>\n    <textarea cols="50" rows="10" name="code" readonly>TypeError: update_dashboard() missing 4 required positional arguments: &#39;starting_capital&#39;, &#39;risk_factor&#39;, &#39;slippage&#39;, and &#39;commission&#39;\n</textarea>\n</div>\n<div class="explanation">\n  The debugger caught an exception in your WSGI application.  You can now\n  look at the traceback which led to the error.  <span class="nojavascript">\n  If you enable JavaScript you can also use additional features such as code\n  execution (if the evalex feature is enabled), automatic pasting of the\n  exceptions and much more.</span>\n</div>\n      <div class="footer">\n        Brought to you by <strong class="arthur">DON'T PANIC</strong>, your\n        friendly Werkzeug powered traceback interpreter.\n      </div>\n    </div>\n\n    <div class="pin-prompt">\n      <div class="inner">\n        <h3>Console Locked</h3>\n        <p>\n          The console is locked and needs to be unlocked by entering the PIN.\n          You can find the PIN printed out on the standard output of your\n          shell that runs the server.\n        <form>\n          <p>PIN:\n            <input type=text name=pin size=14>\n            <input type=submit name=btn value="Confirm Pin">\n        </form>\n      </div>\n    </div>\n  </body>\n</html>\n\n<!--\n\nTypeError: update_dashboard() missing 4 required positional arguments: 'starting_capital', 'risk_factor', 'slippage', and 'commission'\n\n\n-->\n` }
-<anonymous code>:1:147461
-Object { message: "Callback error updating download-trades.data", html: '<!doctype html>\n<html lang=en>\n  <head>\n    <title>KeyError: &#39;position&#39;\n // Werkzeug Debugger</title>\n    <link rel="stylesheet" href="?__debugger__=yes&amp;cmd=resource&amp;f=style.css">\n    <link rel="shortcut icon"\n        href="?__debugger__=yes&amp;cmd=resource&amp;f=console.png">\n    <script src="?__debugger__=yes&amp;cmd=resource&amp;f=debugger.js"></script>\n    <script>\n      var CONSOLE_MODE = false,\n          EVALEX = true,\n          EVALEX_TRUSTED = true,\n          SECRET = "ilEANRYQsPcUhGTUmRHk";\n    </script>\n  </head>\n  <body style="background-color: #fff">\n    <div class="debugger">\n<h1>KeyError</h1>\n<div class="detail">\n  <p class="errormsg">KeyError: &#39;position&#39;\n</p>\n</div>\n<h2 class="traceback">Traceback <em>(most recent call last)</em></h2>\n<div class="traceback">\n  <h3></h3>\n  <ul><li><div class="frame" id="frame-4735852336">\n  <h4>File <cite class="filename">"/Users/mrtn/VS Code projects/StrategyTester/.venv/lib/python3.11/site-packages/pandas/core/i…' }
-​
-html: '<!doctype html>\n<html lang=en>\n  <head>\n    <title>KeyError: &#39;position&#39;\n // Werkzeug Debugger</title>\n    <link rel="stylesheet" href="?__debugger__=yes&amp;cmd=resource&amp;f=style.css">\n    <link rel="shortcut icon"\n        href="?__debugger__=yes&amp;cmd=resource&amp;f=console.png">\n    <script src="?__debugger__=yes&amp;cmd=resource&amp;f=debugger.js"></script>\n    <script>\n      var CONSOLE_MODE = false,\n          EVALEX = true,\n          EVALEX_TRUSTED = true,\n          SECRET = "ilEANRYQsPcUhGTUmRHk";\n    </script>\n  </head>\n  <body style="background-color: #fff">\n    <div class="debugger">\n<h1>KeyError</h1>\n<div class="detail">\n  <p class="errormsg">KeyError: &#39;position&#39;\n</p>\n</div>\n<h2 class="traceback">Traceback <em>(most recent call last)</em></h2>\n<div class="traceback">\n  <h3></h3>\n  <ul><li><div class="frame" id="frame-4735852336">\n  <h4>File <cite class="filename">"/Users/mrtn/VS Code projects/StrategyTester/.venv/lib/python3.11/site-packages/pandas/core/i…'
-​
-message: "Callback error updating download-trades.data"
-​
-<prototype>: Object { … }
-<anonymous code>:1:147461
-
-​
-

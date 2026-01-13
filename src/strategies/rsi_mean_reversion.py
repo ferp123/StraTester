@@ -6,7 +6,7 @@ Implements the Strategy interface.
 
 import pandas as pd
 from typing import Dict, Any
-from src.strategy_interface import Strategy
+from strategy_interface import Strategy
 
 class RsiMeanReversionStrategy(Strategy):
     def __init__(self, period: int = 14, lower: float = 30, upper: float = 70, trend_ma: int = 50, **kwargs):

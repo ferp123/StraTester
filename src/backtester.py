@@ -6,7 +6,7 @@ Runs strategies on historical data and computes performance metrics.
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, Optional
-from .strategy_interface import Strategy
+from strategy_interface import Strategy
 
 class Backtester:
     def __init__(self, data: pd.DataFrame, strategy: Strategy, initial_cash: float = 100_000, fee: float = 0.0, risk_factor: float = 1.0, risk_reward: float = 3.0):
