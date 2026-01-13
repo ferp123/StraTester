@@ -59,3 +59,29 @@
 - [ ] Create docs/ directory and initial documentation
 - [ ] Add docstrings and usage examples
 - [ ] Plan for future asset class support
+
+# 11. Save button
+
+        1. What to Save
+            Backtest settings: Symbol, provider, strategy, parameters, capital, risk, slippage, commission, cache file, date/time, etc.
+            Performance metrics: All metrics shown in the dashboard (final equity, return, drawdown, win rate, etc.).
+            Trade log: The full trade list for the run.
+            Optional: Equity curve, price/signals, or even the full backtest data (could be large).
+        2. Where to Save
+            Local file (CSV/JSON): Save each run as a file in a dedicated folder (e.g., saved_runs/). JSON is flexible for settings + metrics; CSV is good for trade logs.
+            Database: For more advanced use, runs could be stored in SQLite or another DB for easy querying and comparison.
+            In-app memory: For quick access during the session, but not persistent.
+        3. How to Trigger
+            Dashboard button: Add a “Save Run” button to the dashboard UI.
+            Auto-save: Optionally, auto-save every run, or prompt the user after each run.
+        4. How to Load/View
+            Saved runs list: Add a dropdown or table to view/load previous runs.
+            Comparison: Allow comparing saved runs side by side.
+        5. Implementation Suggestion (MVP)
+            Add a “Save Run” button to the dashboard.
+            When clicked, save a JSON file in a saved_runs/ folder with:
+            All backtest settings
+            All performance metrics
+            Trade log (as a list of dicts)
+            Timestamp and unique ID
+            Optionally, add a “Saved Runs” section to view/load previous runs.
